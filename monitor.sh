@@ -104,11 +104,11 @@ else
 fi
 
 if [ -z ${8} ]; then
-	read -p "Refresh Rate in Seconds? " REFRESH
+	read -p "Refresh Rate in Seconds? " REFRESH_ORIG
 else
-	REFRESH=${8}
+	REFRESH_ORIG=${8}
 fi
-REFRESH=$(expr ${REFRESH} - 1)
+REFRESH=$(expr ${REFRESH_ORIG} - 1)
 }
 
 get_int_list(){
@@ -176,8 +176,10 @@ monitor_int(){
 	A_OUT=$(snmpget -v3 -l authPriv -u ${USERNAME} -a ${AUTH} -A ${PASSWORD} -x ${ENCRYPT} -X ${KEY}  -Ovq ${NODE} 1.3.6.1.2.1.31.1.1.1.10.${ID})
 	while sleep ${REFRESH}.$((1999999999 - 1$(date +%N))); do
 	# while true; do
-		# sleep ${REFRESH}
-		TIME=$(date +%H:%M:%S.%N)
+		EPOCH=$(date +%s.%N)
+		#TIME=$(date +%H:%M:%S.%N)
+		TIME=$(date +%H:%M:%S.%N --date=@${EPOCH})
+		UTC=$(date +%H:%M:%S.%N -u --date=@${EPOCH})
 		B_TIME=$(date +%s.%N)
 		B_IN=$(snmpget -v3 -l authPriv -u ${USERNAME} -a ${AUTH} -A ${PASSWORD} -x ${ENCRYPT} -X ${KEY}  -Ovq ${NODE} 1.3.6.1.2.1.31.1.1.1.6.${ID})
 		B_OUT=$(snmpget -v3 -l authPriv -u ${USERNAME} -a ${AUTH} -A ${PASSWORD} -x ${ENCRYPT} -X ${KEY}  -Ovq ${NODE} 1.3.6.1.2.1.31.1.1.1.10.${ID})
@@ -192,11 +194,11 @@ monitor_int(){
                 ININT=$(echo "${IN} * 100" | bc | cut -d. -f1)
                 OUTINT=$(echo "${OUT} * 100" | bc | cut -d. -f1)
 		if [ "${ININT}" -ge "${INRED}" ] || [ "${OUTINT}" -ge "${OUTRED}" ]; then
-			colorize RED "${TIME}\t|\tIn: ${IN}Mbps\t|\tOut: ${OUT}Mbps\n"
+			colorize RED "${TIME}|${UTC} UTC\t|\tIn: ${IN}Mbps\t|\tOut: ${OUT}Mbps\n"
 		elif [ "${ININT}" -ge "${INYELLOW}" ] || [ "${OUTINT}" -ge "${OUTYELLOW}" ]; then
-			colorize YELLOW "${TIME}\t|\tIn: ${IN}Mbps\t|\tOut: ${OUT}Mbps\n"
+			colorize YELLOW "${TIME}|${UTC} UTC\t|\tIn: ${IN}Mbps\t|\tOut: ${OUT}Mbps\n"
 		else
-			colorize GREEN "${TIME}\t|\tIn: ${IN}Mbps\t|\tOut: ${OUT}Mbps\n"
+			colorize GREEN "${TIME}|${UTC} UTC\t|\tIn: ${IN}Mbps\t|\tOut: ${OUT}Mbps\n"
 		fi
 	done
 
@@ -221,5 +223,5 @@ echo "Usage:  ./monitor.sh <NODEIP> <USERNAME> <AUTH_TYPE> <PASSWORD> <ENCRYPTIO
 prechecks
 get_variables ${1} ${2} ${3} ${4} ${5} ${6} ${7} ${8}
 get_thresholds ${9} ${10} ${11} ${12}
-echo "Command one-line:  \"./monitor.sh ${NODE} ${USERNAME} ${AUTH} ${PASSWORD} ${ENCRYPT} ${KEY} ${ID} ${REFRESH} ${INRED} ${INYELLOW} ${OUTRED} ${OUTYELLOW}\""
+echo "Command one-line:  \"./monitor.sh ${NODE} ${USERNAME} ${AUTH} ${PASSWORD} ${ENCRYPT} ${KEY} ${ID} ${REFRESH_ORIG} ${INRED} ${INYELLOW} ${OUTRED} ${OUTYELLOW}\""
 begin_monitor
